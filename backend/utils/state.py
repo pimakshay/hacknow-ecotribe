@@ -2,18 +2,35 @@ from typing import TypedDict, List
 
 class InputState(TypedDict):
     image_path: str
-
-class OutputState(TypedDict):
     image_analysis_result: dict # name of the fruit or vegetable
     
     hyperspectral_analysis_result: dict # yes or no
     
     gas_detector_result: dict
 
-    ripen_assessment: dict
+    ripen_assessment_result: dict
 
-    defect_assessment: dict
+    defect_assessment_result: dict
 
+    quality_assessment_result: dict
+
+    decision_support_result: dict
+
+class OutputState(TypedDict):
+    # image_path: str
+    image_analysis_result: dict # name of the fruit or vegetable
+    
+    hyperspectral_analysis_result: dict # yes or no
+    
+    gas_detector_result: dict
+
+    ripen_assessment_result: dict
+
+    defect_assessment_result: dict
+
+    quality_assessment_result: dict
+
+    decision_support_result: dict
 # class OutputState(TypedDict):
 #     object_name: str # name of the fruit or vegetable
 #     color: str # color of the fruit

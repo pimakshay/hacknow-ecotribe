@@ -1,14 +1,15 @@
 from langgraph.graph import StateGraph, END
 from backend.utils.ecotribe_agents import EcoTribeAgent
-from utils.state import State
+from backend.utils.state import InputState, OutputState
 
 class WorkflowManager:
-    def __init__(self, api_key: str, endpoint_url:str):
-        self.agent = EcoTribeAgent(API_KEY=api_key)
+    def __init__(self):
+        self.agent = EcoTribeAgent()
         
-    def create_graph(self) -> StateGraph:
+    def create_workflow(self) -> StateGraph:
         # Initialize the graph
-        workflow = StateGraph(State)
+        workflow = StateGraph(input=InputState, output=OutputState)
+        # workflow = StateGraph()
 
         # Add nodes
         workflow.add_node("image_analysis", self.agent.image_analysis_node)
@@ -25,8 +26,8 @@ class WorkflowManager:
         workflow.set_entry_point("gas_detector_analysis")
 
         # Define edges
-        # workflow.add_edge("image_analysis", "ripen_assessment")
         workflow.add_edge("image_analysis", "defect_assessment")
+        workflow.add_edge("hyperspectral_analysis", "defect_assessment")
         workflow.add_edge("hyperspectral_analysis", "ripen_assessment")
         workflow.add_edge("gas_detector_analysis", "ripen_assessment")
         workflow.add_edge("ripen_assessment", "quality_assessment")
@@ -36,5 +37,8 @@ class WorkflowManager:
         # Set the end point
         workflow.add_edge("decision_support", END)
 
-        return workflow.compile()
+        return workflow
+    
+    def returnGraph(self):
+        return self.create_workflow().compile()
 

@@ -1,8 +1,9 @@
 from backend.utils.image_tools import analyze_image_quality, analyze_hyperspectral_image_quality, analyze_gas_detector
-from backend.utils.state import OutputState
+from backend.utils.state import OutputState, InputState
 from backend.utils.LLMManager import LLMManager
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import JsonOutputParser
+from backend.utils.helper_funcs import FruitQuality, FruitQualityAgent
 
 import base64
 from io import BytesIO
@@ -13,10 +14,11 @@ def image_to_base64(image_path):
 
 
 class EcoTribeAgent:
-    def __init__(self, API_KEY):
-        self.llm_manager = LLMManager(api_key=API_KEY)
+    def __init__(self):
+        self.llm_manager = LLMManager()
+        self.fruit_quality_agent = FruitQualityAgent()
 
-    def image_analysis_node(self, state: OutputState) -> OutputState:
+    def image_analysis_node(self, state: dict) -> OutputState:
         """Parse user question and identify image qualities."""
         image_path = state['image_path']
         image_base64 = image_to_base64(image_path)
@@ -25,11 +27,12 @@ class EcoTribeAgent:
         The input images can include images of fresh, semi-ripen, fully-ripen, or rotten fruits.
         Your task is to return a json object with following keys:
         {{
-        object_name: str, # name of the fruit
-        color: str, # color of the fruit
-        surface_texture: str, # texture of the surface: ["smooth", "rough", "fuzzy", "wrinkled", "bumpy", "waxy", "spiky", "dimpled"] 
-        has_mould_spot: str, # yes or no
-        shape: str # options: ["normal", "distorted", "swollen", "shriveled"]}}
+        "object_name": str, # name of the fruit
+        "color": str, # color of the fruit
+        "surface_texture": str, # texture of the surface: ["smooth", "rough", "fuzzy", "wrinkled", "bumpy", "waxy", "spiky", "dimpled"] 
+        "has_mould_spot": str, # yes or no
+        "shape": str # options: ["normal", "distorted", "swollen", "shriveled"]
+        }}
      
      These information would help the user to identify if the fruit is fresh, partially-ripen, fully-ripen, partially-rotten, or fully-roten.
      '''),
@@ -38,12 +41,11 @@ class EcoTribeAgent:
 ])
 
         output_parser = JsonOutputParser()
-        prompt = prompt.format()
-        response = self.llm_manager.invoke(prompt.format(), response_format={"type": "json_object"})
-        parsed_response = output_parser.parse(response.content)
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"})
+        parsed_response = output_parser.parse(response)
         return {"image_analysis_result": parsed_response}
 
-    def hyperspectral_analysis_node(self, state: OutputState) -> OutputState:
+    def hyperspectral_analysis_node(self, state: dict) -> OutputState:
         image_path = state['image_path']
         image_base64 = image_to_base64(image_path)
         prompt = ChatPromptTemplate.from_messages([
@@ -62,12 +64,11 @@ class EcoTribeAgent:
 ])
 
         output_parser = JsonOutputParser()
-        prompt = prompt.format()
-        response = self.llm_manager.invoke(prompt.format(), response_format={"type": "json_object"})
-        parsed_response = output_parser.parse(response.content)
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"})
+        parsed_response = output_parser.parse(response)
         return {"hyperspectral_analysis_result": parsed_response}
 
-    def gas_detector_analysis_node(self, state) -> OutputState:
+    def gas_detector_analysis_node(self, state: dict) -> OutputState:
         image_path = state['image_path']
         image_base64 = image_to_base64(image_path)
         prompt = ChatPromptTemplate.from_messages([
@@ -75,11 +76,11 @@ class EcoTribeAgent:
              Due to unavailability of gas detector sensors, you will be given an image as input, and your job is to guess which gases might have been released.
         Your task is to return a json object with following keys:
         {{
-        level_of_ethylene: str # options: ["excessive", "high", "normal", "not_detected"]. Excessive means already ripened
-        level_of_CO2: str # options: ["excessive", "high", "normal", "not_detected"]. Spike in CO2 indicates reduced shelf life
-        level_of_methane: str # options: ["excessive", "high", "normal", "not_detected"]. If methane detected, fruit is spoiled
-        level_of_ammonia: str # option: ["excessive", "high", "normal", "not_detected"]. The presence of ammonia indicates significant spoilage and bacterial activity.
-        level_of_hydrogenSulfide: str # option: ["excessive", "high", "normal", "not_detected"]
+        "level_of_ethylene": str, # options: ["excessive", "high", "normal", "not_detected"]. Excessive means already ripened
+        "level_of_CO2": str, # options: ["excessive", "high", "normal", "not_detected"]. Spike in CO2 indicates reduced shelf life
+        "level_of_methane": str, # options: ["excessive", "high", "normal", "not_detected"]. If methane detected, fruit is spoiled
+        "level_of_ammonia": str, # option: ["excessive", "high", "normal", "not_detected"]. The presence of ammonia indicates significant spoilage and bacterial activity.
+        "level_of_hydrogen_sulfide": str, # option: ["excessive", "high", "normal", "not_detected"]
              }}
      
      Be creative with the responses as these information would help the user to identify if the fruit is fresh, partially-ripen, fully-ripen, partially-rotten, or fully-roten.
@@ -89,9 +90,8 @@ class EcoTribeAgent:
 ])
 
         output_parser = JsonOutputParser()
-        prompt = prompt.format()
-        response = self.llm_manager.invoke(prompt.format(), response_format={"type": "json_object"})
-        parsed_response = output_parser.parse(response.content)
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"})
+        parsed_response = output_parser.parse(response)
         return {"gas_detector_result": parsed_response}
 
     def ripen_assessment_node(self, state: OutputState) -> OutputState:
@@ -117,10 +117,9 @@ class EcoTribeAgent:
     ("human", "Please analyze sensor data and return JSON object as mentioned in the instructions."),
 ])
         output_parser = JsonOutputParser()
-        prompt = prompt.format()
-        response = self.llm_manager.invoke(prompt.format(combined_response=combined_response), response_format={"type": "json_object"})
-        parsed_response = output_parser.parse(response.content)
-        return {"ripen_assessment": parsed_response}
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"}, combined_response=combined_response)
+        parsed_response = output_parser.parse(response)
+        return {"ripen_assessment_result": parsed_response}
 
     def defect_assessment_node(self, state: OutputState) -> OutputState:
         # Assess defects based on image data
@@ -142,33 +141,79 @@ class EcoTribeAgent:
             "description": str, # describe the identified state of the fruit
         }}
      '''),
-    ("human", "Please analyze image analysis and hyperspectral imaging sensor data and return JSON object as mentioned in the instructions."),
+    ("human", "Please analyze image data and hyperspectral imaging sensor data and return JSON object as mentioned in the instructions."),
 ])
         output_parser = JsonOutputParser()
-        prompt = prompt.format()
-        response = self.llm_manager.invoke(prompt.format(combined_response=combined_response), response_format={"type": "json_object"})
-        parsed_response = output_parser.parse(response.content)
-        return {"defect_assessment": parsed_response}
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"}, combined_response=combined_response)
+        parsed_response = output_parser.parse(response)
+        return {"defect_assessment_result": parsed_response}
 
-    def quality_assessment_node(state: OutputState) -> OutputState:
+    def quality_assessment_node(self, state: OutputState) -> OutputState:
         # Assess overall quality based on ripeness and defect assessments
-        state['quality_assessment'] = {
-            "result": "Quality assessed",
+        combined_response = {
             "data": {
-                "ripeness": state['ripen_assessment'],
-                "defects": state['defect_assessment']
+                "ripen_assessment_result": state["ripen_assessment_result"],
+                "defect_assessment_result": state["defect_assessment_result"]
             }
         }
-        return state
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", '''You are an expert at rating the fruit based on its ripen assessment and defect assessment. Ripen assessment gives you an idea about the ripen state of the fruit, whereas defect assessment identifies if there is any defect in the fruit.
+             Below is the data in json format with two keys, "ripen_assessment" and "defect_assessment": 
+        {combined_response}
 
-    def decision_support_node(state: OutputState) -> OutputState:
+    Below are the Quality standards and their corresponding reasons:
+
+    1. Extra Class (Fully Fresh)
+    - Highest quality fruits
+    - Free from defects
+    - Excellent condition for immediate consumption
+
+    2. Class I (Fresh, but may have minor defects)
+    - Good quality fruits
+    - Slight defects allowed in shape, development, coloring
+    - Suitable for consumption, but may have a slightly shorter shelf life than Extra Class
+
+    3. Class II (Consumable for a few days)
+    - Fruits that don't qualify for higher classes but meet minimum requirements
+    - May have defects in shape, development, coloring
+    - Suitable for consumption but may have a shorter shelf life
+
+    4. Class III (Consumable same day)
+    - Fruits that don;t qualify for Class II but are still safe for immediate consumption
+    - Might have more visible defects in shape, development, or coloring
+    - Suitable for same-day consumption or processing but not for longer-term storage or display.
+
+    5. Below Standard (Potential Waste)
+    - Fruits that don't meet the minimum requirements for Class II
+    - May be suitable for processing or animal feed
+    - Not suitable for direct human consumption in fresh form
+             
+        Your task is to return a json object with following keys:
+        {{
+            "quality_standard": str, # options: ["Extra Class", "Class I", "Class II", "Class III", "Below Standard"]
+            "description": str, # describe the identified quality standard based on fruit conditions
+        }}
+     '''),
+    ("human", "Please analyze ripen and defect assessment data and return JSON object as mentioned in the instructions."),
+])
+        output_parser = JsonOutputParser()
+        response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"}, combined_response=combined_response)
+        parsed_response = output_parser.parse(response)
+        return {"quality_assessment_result": parsed_response}
+
+    def decision_support_node(self, state: OutputState) -> OutputState:
         # Make a decision based on quality assessment
-        state['decision'] = "Decision made based on quality assessment"
-        return state
+        quality_assessment = state["quality_assessment_result"]
+        standard = quality_assessment["quality_standard"].lower()
 
-    def decision_node(state):
-        analysis_result = state['analysis_result']
-        if "score" in analysis_result and int(analysis_result.split(":")[1].strip()) > 5:
-            return "high_quality"
-        else:
-            return "low_quality"
+        discount, shelf_life, recommendation = self.fruit_quality_agent.process_fruit_quality(standard)
+
+        response = {
+            "decision_support_result": 
+            {
+                "discount": discount,
+                "shelf_life": shelf_life,
+                "recommendation": recommendation
+            }
+        }
+        return response
