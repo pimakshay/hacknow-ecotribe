@@ -10,6 +10,10 @@ class OutputState(TypedDict):
     
     gas_detector_result: dict
 
+    ripen_assessment: dict
+
+    defect_assessment: dict
+
 # class OutputState(TypedDict):
 #     object_name: str # name of the fruit or vegetable
 #     color: str # color of the fruit

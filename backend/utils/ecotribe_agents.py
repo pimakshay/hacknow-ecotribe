@@ -94,25 +94,61 @@ class EcoTribeAgent:
         parsed_response = output_parser.parse(response.content)
         return {"gas_detector_result": parsed_response}
 
-    def ripen_assessment_node(state: OutputState) -> OutputState:
+    def ripen_assessment_node(self, state: OutputState) -> OutputState:
         # Assess ripeness based on image, hyperspectral, and gas detector data
-        state['ripen_assessment'] = {
+        combined_response = {
             "data": {
-                "image": state['image_data'],
-                "hyperspectral": state['hyperspectral_data'],
-                "gas": state['gas_detector_data']
+                "hyperspectral_imaging_results": state['hyperspectral_analysis_result'],
+                "gas_detection_results": state['gas_detector_result'],
             }
         }
-        result = ripenness_analysis(image_path)
-        return state
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", '''You are an expert at identifying if the fruit is fresh, partially ripen, fully ripen, partially spoiled, or full spoiled from the data coming from hyperspectral imaging and gas detector sensors.
+             Below is the data in json format with two keys, "hyperspectral_imaging_results" and "gas_detection_results": 
+        {combined_response}
+     
+        Your task is to return a json object with following keys:
+        {{
+            "has_ripend": str, # yes or no
+            "state": str, # options: ["fresh", "partially-ripen", "fully-ripen", "partially-spoiled", "full-spoiled"]
+            "description": str, # describe the identified state of the fruit
+        }}
+     '''),
+    ("human", "Please analyze sensor data and return JSON object as mentioned in the instructions."),
+])
+        output_parser = JsonOutputParser()
+        prompt = prompt.format()
+        response = self.llm_manager.invoke(prompt.format(combined_response=combined_response), response_format={"type": "json_object"})
+        parsed_response = output_parser.parse(response.content)
+        return {"ripen_assessment": parsed_response}
 
-    def defect_assessment_node(state: OutputState) -> OutputState:
+    def defect_assessment_node(self, state: OutputState) -> OutputState:
         # Assess defects based on image data
-        state['defect_assessment'] = {
-            "result": "Defects assessed",
-            "data": state['image_data']
+        combined_response = {
+            "data": {
+                "image_analysis_result": state["image_analysis_result"],
+                "hyperspectral_imaging_results": state['hyperspectral_analysis_result']
+            }
         }
-        return state
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", '''You are an expert at identifying if the fruit is defective from the data coming from image analysis and hyperspectral imaging sensors.
+             Below is the data in json format with two keys, "image_analysis_result" and "hyperspectral_imaging_results": 
+        {combined_response}
+     
+        Your task is to return a json object with following keys:
+        {{
+            "has_defect": str, # yes or no
+            "state": List[str], # options: ["bruising", "rot", "sunburn", "skin-cracking", "scarring", "shriveling", "mold"]
+            "description": str, # describe the identified state of the fruit
+        }}
+     '''),
+    ("human", "Please analyze image analysis and hyperspectral imaging sensor data and return JSON object as mentioned in the instructions."),
+])
+        output_parser = JsonOutputParser()
+        prompt = prompt.format()
+        response = self.llm_manager.invoke(prompt.format(combined_response=combined_response), response_format={"type": "json_object"})
+        parsed_response = output_parser.parse(response.content)
+        return {"defect_assessment": parsed_response}
 
     def quality_assessment_node(state: OutputState) -> OutputState:
         # Assess overall quality based on ripeness and defect assessments

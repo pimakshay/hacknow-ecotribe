@@ -25,7 +25,7 @@ class WorkflowManager:
         workflow.set_entry_point("gas_detector_analysis")
 
         # Define edges
-        workflow.add_edge("image_analysis", "ripen_assessment")
+        # workflow.add_edge("image_analysis", "ripen_assessment")
         workflow.add_edge("image_analysis", "defect_assessment")
         workflow.add_edge("hyperspectral_analysis", "ripen_assessment")
         workflow.add_edge("gas_detector_analysis", "ripen_assessment")
