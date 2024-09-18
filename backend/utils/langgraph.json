@@ -1,0 +1,8 @@
+{
+    "dependencies": ["./my_quality_detection_app"],
+    "graphs": {
+      "quality_detection": "./my_quality_detection_app/agent.py:graph"
+    },
+    "env": ".env"
+  }
+  
