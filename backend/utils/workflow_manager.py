@@ -9,7 +9,6 @@ class WorkflowManager:
     def create_workflow(self) -> StateGraph:
         # Initialize the graph
         workflow = StateGraph(input=InputState, output=OutputState)
-        # workflow = StateGraph()
 
         # Add nodes
         workflow.add_node("image_analysis", self.agent.image_analysis_node)

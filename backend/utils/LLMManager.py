@@ -1,16 +1,26 @@
+import os
+
+from dotenv import load_dotenv
+load_dotenv()
+API_KEY = os.getenv("GEMINI_API_KEY")
+GEMINI_MODEL_NAME = os.getenv("GEMINI_MODEL")
+
+
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
-from langchain_openai import AzureChatOpenAI
 
 class LLMManager:
     def __init__(self):
-        self.llm = AzureChatOpenAI(
-                    api_key="b36879e47f2d42109a3d54edb22f78c3",
-                    azure_endpoint="https://ecotribe.openai.azure.com/openai/deployments/Chat/chat/completions?api-version=2024-02-15-preview",
-                    api_version="2024-02-15-preview",
-                    model="gpt-4o",
-                    temperature=0,
-                    max_tokens=None
-                )
+        api_key = API_KEY
+        model_name = GEMINI_MODEL_NAME
+        temperature = 0.0
+        verbose = True
+
+        # Create an OpenAI object.
+        self.llm = ChatGoogleGenerativeAI(model=model_name, 
+                                google_api_key=api_key, 
+                                temperature=temperature, 
+                                verbose=verbose)
 
     def invoke(self, prompt: ChatPromptTemplate, **kwargs) -> str:
         messages = prompt.format_messages(**kwargs)

@@ -39,7 +39,7 @@ class FruitQualityAgent:
         elif quality == FruitQuality.CLASS_I:
             return f"Good quality fruit. Apply {discount}% discount. Regular display. Shelf life: {shelf_life}"
         elif quality == FruitQuality.CLASS_II:
-            return f"Standard quality fruit. Apply {discount}% discount. Consider for quick sale promotions. Shelf life: {shelf_life}"
+            return f"Degraded quality fruit. Apply {discount}% discount. Consider for quick sale promotions. Shelf life: {shelf_life}"
         elif quality == FruitQuality.CLASS_III:
             return f"Lower quality fruit. Apply {discount}% discount. Use for immediate sale or processing. Shelf life: {shelf_life}"
 

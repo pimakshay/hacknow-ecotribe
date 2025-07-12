@@ -149,6 +149,8 @@ class EcoTribeAgent:
         return {"defect_assessment_result": parsed_response}
 
     def quality_assessment_node(self, state: OutputState) -> OutputState:
+        image_path = state['image_path']
+        image_base64 = image_to_base64(image_path)
         # Assess overall quality based on ripeness and defect assessments
         combined_response = {
             "data": {
@@ -157,34 +159,28 @@ class EcoTribeAgent:
             }
         }
         prompt = ChatPromptTemplate.from_messages([
-            ("system", '''You are an expert at rating the fruit based on its ripen assessment and defect assessment. Ripen assessment gives you an idea about the ripen state of the fruit, whereas defect assessment identifies if there is any defect in the fruit.
-             Below is the data in json format with two keys, "ripen_assessment" and "defect_assessment": 
-        {combined_response}
+            ("system", '''You are an expert in assessing fruit quality based on ripeness and defect factors, along with an image. Your goal is to classify the fruit according to defined quality standards.
 
     Below are the Quality standards and their corresponding reasons:
 
     1. Extra Class (Fully Fresh)
     - Highest quality fruits
-    - Free from defects
+    - Free from any defects, not spoiled, and not fully ripen
     - Excellent condition for immediate consumption
 
     2. Class I (Fresh, but may have minor defects)
     - Good quality fruits
-    - Slight defects allowed in shape, development, coloring
+    - Slight rashes or deformation allowed in shape, development, coloring
     - Suitable for consumption, but may have a slightly shorter shelf life than Extra Class
 
     3. Class II (Consumable for a few days)
     - Fruits that don't qualify for higher classes but meet minimum requirements
     - May have defects in shape, development, coloring
-    - Suitable for consumption but may have a shorter shelf life
-
-    4. Class III (Consumable same day)
-    - Fruits that don;t qualify for Class II but are still safe for immediate consumption
-    - Might have more visible defects in shape, development, or coloring
-    - Suitable for same-day consumption or processing but not for longer-term storage or display.
-
-    5. Below Standard (Potential Waste)
+    - Doubtful about consumption and may have a shorter shelf life
+             
+    4. Below Standard (Potential Waste)
     - Fruits that don't meet the minimum requirements for Class II
+    - Fruits that are half decayed, spoiled, squishy, wrinkled skin, and brown dead skin.
     - May be suitable for processing or animal feed
     - Not suitable for direct human consumption in fresh form
              
@@ -193,8 +189,11 @@ class EcoTribeAgent:
             "quality_standard": str, # options: ["Extra Class", "Class I", "Class II", "Class III", "Below Standard"]
             "description": str, # describe the identified quality standard based on fruit conditions
         }}
+    
+    Think again and verify the fruit quality standard with the reasons listed above.
      '''),
-    ("human", "Please analyze ripen and defect assessment data and return JSON object as mentioned in the instructions."),
+    ("human", "Please analyze the image, and return JSON object as mentioned in the instructions."),
+    ("human", f"![fruit_image](data:image/jpeg;base64,{image_base64})")
 ])
         output_parser = JsonOutputParser()
         response = self.llm_manager.invoke(prompt, response_format={"type": "json_object"}, combined_response=combined_response)

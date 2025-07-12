@@ -1,7 +1,5 @@
 import plotly.graph_objects as go
 
-values = ["excessive", "high", "normal", "not_detected"]
-
 def create_gauge(value, title, max_value=100):
     return go.Figure(go.Indicator(
         mode = "gauge+number",
@@ -12,7 +10,7 @@ def create_gauge(value, title, max_value=100):
                 'bar': {'color': "darkblue"},
                 'steps': [
                     {'range': [0, max_value/3], 'color': "green"},
-                    {'range': [max_value/3, 2*max_value/3], 'color': "gray"},
+                    {'range': [max_value/3, 2*max_value/3], 'color': "orange"},
                     {'range': [2*max_value/3, max_value], 'color': "red"}],
                 'threshold': {
                     'line': {'color': "red", 'width': 4},
@@ -41,7 +39,7 @@ def create_ripness_level_gauge(value, title, max_value=100):
                 'bar': {'color': "darkblue"},
                 'steps': [
                     {'range': [0, max_value/3], 'color': "green"},
-                    {'range': [max_value/3, 2*max_value/3], 'color': "gray"},
+                    {'range': [max_value/3, 2*max_value/3], 'color': "orange"},
                     {'range': [2*max_value/3, max_value], 'color': "red"}],
                 'threshold': {
                     'line': {'color': "red", 'width': 4},
@@ -71,7 +69,7 @@ def create_quality_level_gauge(value: str, title: str, max_value=100):
                 'bar': {'color': "darkblue"},
                 'steps': [
                     {'range': [0, max_value/3], 'color': "red"},
-                    {'range': [max_value/3, 2*max_value/3], 'color': "gray"},
+                    {'range': [max_value/3, 2*max_value/3], 'color': "orange"},
                     {'range': [2*max_value/3, max_value], 'color': "green"}],
                 'threshold': {
                     'line': {'color': "red", 'width': 4},
